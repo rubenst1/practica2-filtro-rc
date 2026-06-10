@@ -1,0 +1,96 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# --- Parámetros del circuito ---
+R = 200.0
+C = 8.5e-6
+fc = 1 / (2 * np.pi * R * C)
+
+def calcular_transferencia(f):
+    w = 2 * np.pi * f
+    H = 1 / (1 + 1j * w * R * C)
+    return np.abs(H), np.angle(H)
+
+def plot_osciloscopio(ax, f, titulo):
+    atenuacion, desfase = calcular_transferencia(f)
+    t = np.linspace(0, 2 / f, 1000)
+    w = 2 * np.pi * f
+    
+    v_in = 1.0 * np.sin(w * t)
+    v_out = atenuacion * np.sin(w * t + desfase)
+    
+    ax.plot(t * 1000, v_in, color='#f1c40f', linewidth=2, label='CH1: Entrada')
+    ax.plot(t * 1000, v_out, color='#3498db', linewidth=2, label=f'CH2: Salida ({atenuacion*100:.1f}%)')
+    
+    ax.set_title(titulo, color='white')
+    ax.set_xlabel('Tiempo (ms)', color='white')
+    ax.set_ylabel('Voltaje (V)', color='white')
+    ax.set_ylim(-1.2, 1.2)
+    ax.grid(color='gray', linestyle='--', alpha=0.5)
+    ax.tick_params(colors='white')
+    ax.legend(loc='upper right', fontsize='small')
+
+plt.style.use('dark_background')
+
+# --- FIGURA 2: 50 Hz ---
+print("Mostrando Osciloscopio a 50 Hz... (Cierra la ventana para continuar)")
+fig, ax = plt.subplots(figsize=(8, 4))
+plot_osciloscopio(ax, 50, 'Osciloscopio - 50 Hz')
+plt.tight_layout()
+plt.show() 
+
+# --- FIGURA 3: 100 Hz ---
+print("Mostrando Osciloscopio a 100 Hz... (Cierra la ventana para continuar)")
+fig, ax = plt.subplots(figsize=(8, 4))
+plot_osciloscopio(ax, 100, 'Osciloscopio - 100 Hz')
+plt.tight_layout()
+plt.show()
+
+# --- FIGURA 4: 400 Hz y 800 Hz ---
+print("Mostrando Osciloscopio a 400 y 800 Hz... (Cierra la ventana para continuar)")
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
+plot_osciloscopio(ax1, 400, 'Osciloscopio - 400 Hz')
+plot_osciloscopio(ax2, 800, 'Osciloscopio - 800 Hz')
+plt.tight_layout()
+plt.show()
+
+# --- FIGURA 5: 10 kHz ---
+print("Mostrando Osciloscopio a 10 kHz... (Cierra la ventana para continuar)")
+fig, ax = plt.subplots(figsize=(8, 4))
+plot_osciloscopio(ax, 10000, 'Osciloscopio - 10 kHz')
+plt.tight_layout()
+plt.show()
+
+# --- FIGURA 6: Diagrama de Bode ---
+print("Mostrando Diagrama de Bode... (Cierra la ventana para finalizar)")
+plt.style.use('default') # Regresamos a fondo blanco
+
+f_bode = np.logspace(1, 5, 1000)
+atenuacion_bode, desfase_bode = calcular_transferencia(f_bode)
+magnitud_db = 20 * np.log10(atenuacion_bode)
+desfase_deg = np.degrees(desfase_bode)
+
+f_puntos = np.array([50, 100, 400, 800, 10000])
+atenuacion_pt, desfase_pt = calcular_transferencia(f_puntos)
+
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 8))
+
+ax1.semilogx(f_bode, magnitud_db, label='Modelo Matemático', color='blue')
+ax1.scatter(f_puntos, 20 * np.log10(atenuacion_pt), color='red', zorder=5, label='Puntos Simulados')
+ax1.axvline(fc, color='gray', linestyle='--', label=f'Corte ({fc:.1f} Hz)')
+ax1.set_ylabel('Magnitud (dB)')
+ax1.set_title('Diagrama de Bode Teórico vs Simulación')
+ax1.grid(True, which="both", ls="--", alpha=0.5)
+ax1.legend()
+
+ax2.semilogx(f_bode, desfase_deg, color='blue')
+ax2.scatter(f_puntos, np.degrees(desfase_pt), color='red', zorder=5)
+ax2.axvline(fc, color='gray', linestyle='--')
+ax2.set_ylabel('Fase (Grados)')
+ax2.set_xlabel('Frecuencia (Hz)')
+ax2.grid(True, which="both", ls="--", alpha=0.5)
+
+plt.tight_layout()
+plt.show()
+
+print("¡Simulación terminada con éxito!")
